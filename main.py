@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from config import build_config
-from data import load_tickers, download_close_and_volume
-from screening import ScreenRules, build_screening_report, apply_screen
-from backtest import run_backtest, run_strategy_backtests
-from frontier import run_frontier
+from src.config import build_config
+from src.data import load_tickers, download_close_and_volume
+from src.screening import ScreenRules, build_screening_report, apply_screen
+from src.backtest import run_backtest, run_strategy_backtests
+from src.frontier import run_frontier
 
 
 def main() -> None:
