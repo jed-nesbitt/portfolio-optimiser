@@ -108,7 +108,7 @@ def main() -> None:
         out_dir=frontier_dir,
         rf=0.04,
         trading_days=252,
-        num_portfolios=15000,
+        num_portfolios=1000000,
         seed=42,
         max_weight=0.2,
         target_return=target_return,

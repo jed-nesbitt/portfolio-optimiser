@@ -1,3 +1,4 @@
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -30,7 +31,7 @@ def build_config() -> Config:
         yf_end_exclusive=yf_end.isoformat(),
         tickers_csv=Path("input") / "tickers.csv",
         out_dir=out_dir,
-        rebalance_freq="M",
+        rebalance_freq="W",
         trading_cost_bps=10.0,   # set 0.0 for no costs
 
     )
