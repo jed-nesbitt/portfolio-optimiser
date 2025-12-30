@@ -4,7 +4,7 @@ A modular portfolio research tool that:
 1) downloads historical prices + volumes from Yahoo Finance (`yfinance`),
 2) screens a user-supplied ticker universe for basic investability/data-quality,
 3) runs a benchmark-relative backtest (Equal Weight),
-4) simulates an efficient frontier “cloud” (no SciPy; random portfolios with constraints),
+4) simulates an efficient frontier “cloud” (Includes SciPy; random portfolios with constraints),
 5) backtests multiple strategies with **monthly (configurable) rebalancing**, **turnover**, and **transaction-cost drag**.
 
 > ⚠️ Educational project — not investment advice.
@@ -17,327 +17,68 @@ A modular portfolio research tool that:
 - **Step 1 — Data Download:** pulls *Close* and *Volume* for tickers from `input/tickers.csv`
 - **Step 2 — Screening:** removes tickers failing investability / data rules (price, liquidity, stale/zero returns)
 - **Step 3 — Backtest (Equal Weight vs Benchmark):** rebalanced + cost-aware, includes turnover
-- **Step 4 — Efficient Frontier (random cloud):** generates random portfolios with constraints and selects “best” points from the cloud  
+- **Step 4 — Efficient Frontier (random cloud):** generates random portfolios with constraints and selects “best” points from the cloud and best possible mathemitacally with the contranints 
 - **Step 5 — Strategy Backtests vs Benchmark:** backtests frontier strategies (rebalanced + cost-aware)
 
 ---
 
-## 📁 Project structure
+### How to run
+1. Install requirements.txt
+2. python main.py
 
-Typical layout:
+### Outputs
 
-```text
-project/
-  main.py
-  config.py
-  data.py
-  screening.py
-  frontier.py
-  backtest.py
+**1. Raw**
+   
+	a. All of the closing share price of all stocks (raw_close.csv)
 
-  input/
-    tickers.csv
+	b. All of the volume of stock trades (raw_volumes.csv)
 
-  outputs/
-    <run_id>/
-      01_raw/
-      02_screening/
-      03_backtest/
-      04_frontier/
+**2. Screening**
+   
+	a. All of the closing share prices of the filtered stocks (close_fitered.csv)
 
-🧰 Requirements
+	b. All of the volume of the filtered stock trades (volume_filtered.csv)
 
-Python 3.10+ recommended
+	c. The report of which stocks got filtered or not and why (universe_screening_report.csv)
 
-Packages:
+<img width="894" height="505" alt="image" src="https://github.com/user-attachments/assets/f9aa1c51-50ca-4ed6-a616-42dd583e0bd5" />
 
-numpy
+**3. Backtest**
+   
+	a. The benchmark backtest prices (backtest_bechmark_close.csv)
 
-pandas
+	b. A backtest of all the filtered assets (backtest_daily_returns_assets_filtered.csv)
 
-yfinance
+	c. A backtest comparison of the equal weighted and benchmark fitted for Power BI export (backtest_timeseries_equal_vs_benchmark.csv)
 
-matplotlib (for frontier plot)
+	d. A metric summary of the equal weighting and benchmark (frontier_optimal_weights.csv)
 
-##**Install:**
+<img width="561" height="73" alt="image" src="https://github.com/user-attachments/assets/11d40470-efbf-4918-a263-2af0a13a3950" />
 
-pip install numpy pandas yfinance matplotlib
+**4. Frontier**
+   
+   a. The different points used for the efficient frontier plot for the optimal weighting of portfolio (frontier_points.csv)
+   
+   b. The efficient frontier chart (efficient_frontier.png)
+   
+   c. The summary of the different method both scipy and efficient frontier (frontier_expected_summary.csv)
+   
+<img width="321" height="193" alt="image" src="https://github.com/user-attachments/assets/ba164a66-347e-4fb2-b843-5ad65ce66e85" />
 
-Configuration (important)
+   d. The optimal weights of the portfolio in order to achieve the desired strategy (frontier_optimal_weights.csv)
+   
+<img width="641" height="433" alt="image" src="https://github.com/user-attachments/assets/9f61dfb2-93d0-4379-8619-b6e83a6f62bc" />
 
-Open config.py. Key items:
+**5. Strategies**
 
-Start date: backtest start
+	a. A summery of the metrics of each strategy backtest (strategies_metrics_summary.csv)
 
-End date: the tool targets “yesterday” as last included date:
+<img width="561" height="217" alt="image" src="https://github.com/user-attachments/assets/99f6494e-ae63-4dac-9944-9e41abecaad3" />
 
-asof_date_inclusive = yesterday
+	b. The timeseries of each strategy with the rebalance cost ready for power BI export (strategies_timeseries.csv)
 
-yf_end_exclusive = today (because yfinance end= is exclusive)
 
-Rebalancing frequency (applies in Step 3 + Step 5):
 
-"M" = Monthly (recommended)
 
-"Q" = Quarterly
 
-"W" = Weekly
-
-"A" = Annual
-
-None = No rebalancing (buy-and-hold weights)
-
-Transaction costs in bps (applies on rebalance dates only):
-
-trading_cost_bps = 10.0 means 10 bps = 0.10% per unit of turnover
-
-01_raw/
-
-raw_close.csv — raw close prices for all requested tickers
-
-raw_volume.csv — raw volumes for all requested tickers
-
-02_screening/
-
-universe_screening_report.csv — per-ticker screening results + reasons
-
-close_filtered.csv — close prices for surviving tickers
-
-volume_filtered.csv — volumes for surviving tickers
-
-03_backtest/ (Equal Weight vs Benchmark)
-
-backtest_daily_returns_assets_filtered.csv — daily returns of filtered universe
-
-backtest_benchmark_close.csv — benchmark close series
-
-backtest_timeseries_equal_vs_benchmark.csv — long format timeseries:
-
-Date, Strategy, DailyReturn, Equity
-
-Turnover, Cost, IsBenchmark
-
-backtest_metrics_summary.csv — CAGR, AnnReturn, Vol, Sharpe, MaxDrawdown
-
-04_frontier/
-
-(Exact filenames depend on your frontier.py, but typically)
-
-frontier_points.csv — random portfolio cloud points (ExpectedReturn/Vol/Sharpe)
-
-frontier_optimal_weights.csv — weights for chosen strategies (e.g., MaxSharpe, MinVol, EqualWeight, TargetReturn_* if used)
-
-frontier_expected_summary.csv — expected stats for those portfolios
-
-efficient_frontier.png — scatter plot of the cloud + selected portfolios
-
-05_strategies/ (multiple strategies vs benchmark)
-
-strategies_timeseries.csv — long format timeseries per strategy:
-
-DailyReturn, Equity, plus Turnover and Cost
-
-strategies_metrics_summary.csv — performance metrics for each strategy vs benchmark
-
-🧪 Screening (Step 2) explained
-
-The screening is a basic “investability + data quality” filter.
-Typical rules (from main.py):
-
-adv_window = 60
-Uses the last 60 trading days to estimate liquidity (ADV).
-
-min_price = 0.01
-Drops near-zero prices (often broken data / illiquid microcaps).
-
-min_adv_dollars = 50_000
-Drops tickers with low average dollar volume (illiquid).
-
-max_zero_ret_frac = 0.20
-Drops tickers with too many zero-return days (stale prices / bad series).
-
-If a ticker is dropped, the screening report tells you why.
-
-📉 Backtesting + rebalancing (Step 3 & 5)
-What “monthly rebalancing” means
-
-Weights drift as prices move. At each period-end (e.g., month-end trading day), the portfolio is reset to the target weights.
-
-What is turnover?
-
-Turnover measures how much you traded on rebalance dates.
-
-We compute (on rebalance days):
-
-turnover
-=
-∑
-𝑖
-∣
-𝑤
-𝑖
-−
-𝑤
-drift
-,
-𝑖
-∣
-turnover=
-i
-∑
-	​
-
-∣w
-i
-	​
-
-−w
-drift,i
-	​
-
-∣
-
-w = target weights
-
-w_drift = weights just before rebalancing
-
-Turnover is 0 on non-rebalance days.
-
-How transaction costs are applied
-
-If trading_cost_bps > 0, cost is applied only on rebalance days:
-
-cost
-=
-turnover
-×
-bps
-10000
-cost=turnover×
-10000
-bps
-	​
-
-
-Portfolio value is reduced by that cost before rebalancing holdings.
-
-✅ This cost drag is reflected in:
-
-daily returns,
-
-equity curve,
-
-CAGR / Sharpe / drawdown metrics.
-
-🧠 Efficient frontier (Step 4) explained (no SciPy)
-
-This project does not use SciPy optimisation.
-
-Instead:
-
-It generates many random long-only portfolios (weights sum to 1),
-
-Applies constraints like max_weight (e.g. 0.2),
-
-Computes expected return / volatility / Sharpe using historical mean & covariance,
-
-Selects:
-
-MinVol: lowest volatility portfolio in the cloud
-
-MaxSharpe: highest Sharpe portfolio in the cloud
-
-EqualWeight: 1/N portfolio
-
-TargetReturn (optional): lowest-vol portfolio near your target expected return
-
-Because this is a random simulation, “optimal” portfolios are approximate and depend on num_portfolios and seed.
-
-If your target-return portfolio is hard to match, increase:
-
-num_portfolios (e.g., 50,000+), or
-
-widen target_tolerance.
-
-📌 Benchmark
-
-By default, the benchmark used in backtests is the ASX 200 index ticker:
-
-^AXJO
-
-You can change it in main.py where Step 3/5 call:
-
-benchmark_ticker="^AXJO"
-
-benchmark_name="Benchmark"
-
-📊 Power BI / SQL (using current outputs)
-
-This project already exports tidy CSVs that are easy to ingest.
-
-Power BI
-
-In Power BI:
-
-Get Data → Text/CSV
-
-Load:
-
-strategies_timeseries.csv (best for charts)
-
-strategies_metrics_summary.csv (best for KPI cards/table)
-
-Create visuals:
-
-equity curve by Strategy
-
-drawdown chart (derived)
-
-turnover/cost over time
-
-SQL (optional)
-
-You can load the same CSVs into a database table (e.g., SQLite/Postgres/SQL Server) and query them:
-
-strategies_timeseries.csv → strategy_returns
-
-strategies_metrics_summary.csv → strategy_metrics
-
-🛠 Troubleshooting
-“No overlapping dates between strategy returns and benchmark returns”
-
-Benchmark ticker might not have data for your date range.
-
-Some tickers might have sparse/missing history.
-
-“<2 tickers left after screening”
-
-Relax screening thresholds:
-
-lower min_adv_dollars
-
-lower min_price
-
-increase max_zero_ret_frac
-
-Frontier looks inconsistent / “max sharpe not on the plot”
-
-Ensure your frontier plot uses the same sharpe values as your selected portfolio.
-
-If you select MaxSharpe from a separate run or different sample, you’ll see mismatches.
-
-Increase num_portfolios for a denser cloud.
-
-✅ Roadmap (future “industry” upgrades)
-
-If you want to push further:
-
-Walk-forward / out-of-sample testing (rolling train/test windows)
-
-Shrinkage covariance (e.g. Ledoit–Wolf)
-
-Deterministic optimiser (SciPy / cvxpy)
-
-Sector constraints, max positions, rounding to shares, minimum trade sizes
-
-Better data sources than yfinance
